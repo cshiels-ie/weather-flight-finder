@@ -6,9 +6,11 @@ A single-file React app that finds the **hottest** and **coldest** destinations 
 
 - 📍 **Auto-detect location** via browser GPS, IP-based lookup, or pick manually
 - 🔍 **City picker** with search (Open-Meteo geocoding API)
+- 🌍 **252 world capitals + major cities** — every country capital, all with coordinates, embedded in the app (no data fetch needed)
+- 🇮🇪 **Emoji country flags** everywhere — derived from ISO2 codes, zero dependencies
 - ✈️ **Flight distance filter** — slider to set max non-stop range (500 – 16,000 km)
 - 📏 **Haversine distances** shown on every destination card
-- 🌡️ **Real-time weather** for your location and **70+ major cities** in one batched API call
+- 🌡️ **Real-time weather** for your location and all 252 destinations in **one batched API call**
 - 🔥 **Hottest destination** card
 - ❄️ **Coldest destination** card
 - 🌍 **Destinations grid** sorted by temperature with distance & temp bars
@@ -19,10 +21,14 @@ A single-file React app that finds the **hottest** and **coldest** destinations 
 ## How it works
 
 1. Detects (or you pick) your current location
-2. Fetches current weather + all 70+ destinations' weather in **one batched call** to [Open-Meteo](https://open-meteo.com/)
+2. Fetches current weather + all 252 destinations' weather in **one batched call** to [Open-Meteo](https://open-meteo.com/)
 3. Computes great-circle distance (haversine) from you to every destination
 4. Filters to destinations within your chosen flight range (with nearest-fallback if too few)
 5. Ranks the survivors by temperature and surfaces the hottest and coldest
+
+## The capitals dataset
+
+The 252-destination list was built by geocoding the [countriesnow.space](https://countriesnow.space/) capitals dataset through the Open-Meteo geocoding API, with manual QA fixes for ambiguous city names (Bern 🇨🇭 vs Berne Indiana 🇺🇸, Hamilton 🇧🇲 vs Hamilton Ontario 🇨🇦, etc.). Each entry has an ISO2 code so flags render as native emoji — no flag image API needed.
 
 ## Run it
 

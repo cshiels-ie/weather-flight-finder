@@ -27,6 +27,7 @@
       50% { box-shadow: 0 0 40px rgba(102, 126, 234, 0.8); }
     }
     .pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
+    .flag { font-size: 1.4em; line-height: 1; }
     input[type="range"] {
       -webkit-appearance: none;
       appearance: none;
@@ -62,87 +63,269 @@
   <script type="text/babel">
     const { useState, useEffect, useRef, useMemo } = React;
 
-    // 45+ major cities worldwide
-    const DESTINATIONS = [
-      // Europe
-      { city: "London", country: "UK", lat: 51.5074, lon: -0.1278, emoji: "🎡" },
-      { city: "Paris", country: "France", lat: 48.8566, lon: 2.3522, emoji: "🗼" },
-      { city: "Berlin", country: "Germany", lat: 52.52, lon: 13.405, emoji: "🐻" },
-      { city: "Madrid", country: "Spain", lat: 40.4168, lon: -3.7038, emoji: "💃" },
-      { city: "Barcelona", country: "Spain", lat: 41.3851, lon: 2.1734, emoji: "⚽" },
-      { city: "Rome", country: "Italy", lat: 41.9028, lon: 12.4964, emoji: "🏟️" },
-      { city: "Amsterdam", country: "Netherlands", lat: 52.3676, lon: 4.9041, emoji: "🌷" },
-      { city: "Lisbon", country: "Portugal", lat: 38.7223, lon: -9.1393, emoji: "🌉" },
-      { city: "Zurich", country: "Switzerland", lat: 47.3769, lon: 8.5417, emoji: "🏔️" },
-      { city: "Vienna", country: "Austria", lat: 48.2082, lon: 16.3738, emoji: "🎵" },
-      { city: "Prague", country: "Czechia", lat: 50.0755, lon: 14.4378, emoji: "🏰" },
-      { city: "Stockholm", country: "Sweden", lat: 59.3293, lon: 18.0686, emoji: "🧊" },
-      { city: "Copenhagen", country: "Denmark", lat: 55.6761, lon: 12.5683, emoji: "🧜‍♀️" },
-      { city: "Oslo", country: "Norway", lat: 59.9139, lon: 10.7522, emoji: "❄️" },
-      { city: "Reykjavik", country: "Iceland", lat: 64.1466, lon: -21.9426, emoji: "🌋" },
-      { city: "Athens", country: "Greece", lat: 37.9838, lon: 23.7275, emoji: "🏛️" },
-      { city: "Santorini", country: "Greece", lat: 36.3932, lon: 25.4615, emoji: "🌅" },
-      { city: "Istanbul", country: "Türkiye", lat: 41.0082, lon: 28.9784, emoji: "🕌" },
-      { city: "Dublin", country: "Ireland", lat: 53.3498, lon: -6.2603, emoji: "🍀" },
-      { city: "Moscow", country: "Russia", lat: 55.7558, lon: 37.6173, emoji: "🏛️" },
-      // Middle East / Africa
-      { city: "Dubai", country: "UAE", lat: 25.2048, lon: 55.2708, emoji: "🏜️" },
-      { city: "Abu Dhabi", country: "UAE", lat: 24.4539, lon: 54.3773, emoji: "🏙️" },
-      { city: "Doha", country: "Qatar", lat: 25.2854, lon: 51.531, emoji: "🏙️" },
-      { city: "Riyadh", country: "Saudi Arabia", lat: 24.7136, lon: 46.6753, emoji: "🏜️" },
-      { city: "Tel Aviv", country: "Israel", lat: 32.0853, lon: 34.7818, emoji: "🏖️" },
-      { city: "Cairo", country: "Egypt", lat: 30.0444, lon: 31.2357, emoji: "🏛️" },
-      { city: "Casablanca", country: "Morocco", lat: 33.5731, lon: -7.5898, emoji: "🕌" },
-      { city: "Marrakech", country: "Morocco", lat: 31.6295, lon: -7.9811, emoji: "🕌" },
-      { city: "Lagos", country: "Nigeria", lat: 6.5244, lon: 3.3792, emoji: "🏙️" },
-      { city: "Nairobi", country: "Kenya", lat: -1.2921, lon: 36.8219, emoji: "🦒" },
-      { city: "Cape Town", country: "South Africa", lat: -33.9249, lon: 18.4241, emoji: "🦁" },
-      { city: "Johannesburg", country: "South Africa", lat: -26.2041, lon: 28.0473, emoji: "🏙️" },
-      // Asia
-      { city: "Mumbai", country: "India", lat: 19.076, lon: 72.8777, emoji: "🎬" },
-      { city: "New Delhi", country: "India", lat: 28.6139, lon: 77.209, emoji: "🛕" },
-      { city: "Kathmandu", country: "Nepal", lat: 27.7172, lon: 85.324, emoji: "🏔️" },
-      { city: "Colombo", country: "Sri Lanka", lat: 6.9271, lon: 79.8612, emoji: "🏖️" },
-      { city: "Bangkok", country: "Thailand", lat: 13.7563, lon: 100.5018, emoji: "🛕" },
-      { city: "Phuket", country: "Thailand", lat: 7.8804, lon: 98.3923, emoji: "🏝️" },
-      { city: "Singapore", country: "Singapore", lat: 1.3521, lon: 103.8198, emoji: "🏙️" },
-      { city: "Kuala Lumpur", country: "Malaysia", lat: 3.139, lon: 101.6869, emoji: "🗼" },
-      { city: "Jakarta", country: "Indonesia", lat: -6.2088, lon: 106.8456, emoji: "🏝️" },
-      { city: "Manila", country: "Philippines", lat: 14.5995, lon: 120.9842, emoji: "🌴" },
-      { city: "Ho Chi Minh", country: "Vietnam", lat: 10.8231, lon: 106.6297, emoji: "🛵" },
-      { city: "Hong Kong", country: "China", lat: 22.3193, lon: 114.1694, emoji: "🏙️" },
-      { city: "Shanghai", country: "China", lat: 31.2304, lon: 121.4737, emoji: "🏙️" },
-      { city: "Beijing", country: "China", lat: 39.9042, lon: 116.4074, emoji: "🏯" },
-      { city: "Tokyo", country: "Japan", lat: 35.6762, lon: 139.6503, emoji: "🗼" },
-      { city: "Osaka", country: "Japan", lat: 34.6937, lon: 135.5023, emoji: "🏯" },
-      { city: "Seoul", country: "South Korea", lat: 37.5665, lon: 126.978, emoji: "🏯" },
-      { city: "Male", country: "Maldives", lat: 4.1755, lon: 73.5093, emoji: "🏝️" },
-      // Oceania
-      { city: "Sydney", country: "Australia", lat: -33.8688, lon: 151.2093, emoji: "🦘" },
-      { city: "Melbourne", country: "Australia", lat: -37.8136, lon: 144.9631, emoji: "🎡" },
-      { city: "Auckland", country: "New Zealand", lat: -36.8485, lon: 174.7633, emoji: "🏙️" },
-      { city: "Nadi", country: "Fiji", lat: -17.7765, lon: 177.4356, emoji: "🏝️" },
-      // Americas
-      { city: "New York", country: "USA", lat: 40.7128, lon: -74.006, emoji: "🗽" },
-      { city: "Los Angeles", country: "USA", lat: 34.0522, lon: -118.2437, emoji: "🎬" },
-      { city: "San Francisco", country: "USA", lat: 37.7749, lon: -122.4194, emoji: "🌉" },
-      { city: "Las Vegas", country: "USA", lat: 36.1699, lon: -115.1398, emoji: "🎰" },
-      { city: "Chicago", country: "USA", lat: 41.8781, lon: -87.6298, emoji: "🏙️" },
-      { city: "Miami", country: "USA", lat: 25.7617, lon: -80.1918, emoji: "🌴" },
-      { city: "Honolulu", country: "USA", lat: 21.3069, lon: -157.8583, emoji: "🌺" },
-      { city: "Anchorage", country: "USA", lat: 61.2181, lon: -149.9003, emoji: "🏔️" },
-      { city: "Toronto", country: "Canada", lat: 43.6532, lon: -79.3832, emoji: "🍁" },
-      { city: "Montreal", country: "Canada", lat: 45.5017, lon: -73.5673, emoji: "🍁" },
-      { city: "Vancouver", country: "Canada", lat: 49.2827, lon: -123.1207, emoji: "🏔️" },
-      { city: "Cancun", country: "Mexico", lat: 21.1619, lon: -86.8515, emoji: "🏖️" },
-      { city: "Mexico City", country: "Mexico", lat: 19.4326, lon: -99.1332, emoji: "🌮" },
-      { city: "Barbados", country: "Barbados", lat: 13.1939, lon: -59.5432, emoji: "🌴" },
-      { city: "Bogotá", country: "Colombia", lat: 4.711, lon: -74.0721, emoji: "🏔️" },
-      { city: "Lima", country: "Peru", lat: -12.0464, lon: -77.0428, emoji: "🏛️" },
-      { city: "São Paulo", country: "Brazil", lat: -23.5505, lon: -46.6333, emoji: "🏙️" },
-      { city: "Rio de Janeiro", country: "Brazil", lat: -22.9068, lon: -43.1729, emoji: "⛰️" },
-      { city: "Buenos Aires", country: "Argentina", lat: -34.6037, lon: -58.3816, emoji: "💃" },
-    ];
+    // 250+ world capitals + major cities, with ISO2 codes for flags
+const DESTINATIONS = [
+  { city: "Abu Dhabi", country: "United Arab Emirates", iso2: "AE", lat: 24.4512, lon: 54.397 },
+  { city: "Abuja", country: "Nigeria", iso2: "NG", lat: 9.0579, lon: 7.4951 },
+  { city: "Accra", country: "Ghana", iso2: "GH", lat: 5.556, lon: -0.1969 },
+  { city: "Adamstown", country: "Pitcairn", iso2: "PN", lat: -25.066, lon: -130.1015 },
+  { city: "Addis Ababa", country: "Ethiopia", iso2: "ET", lat: 9.025, lon: 38.7469 },
+  { city: "Algiers", country: "Algeria", iso2: "DZ", lat: 36.7323, lon: 3.0875 },
+  { city: "Alofi", country: "Niue", iso2: "NU", lat: -19.0529, lon: -169.9196 },
+  { city: "Amman", country: "Jordan", iso2: "JO", lat: 31.9552, lon: 35.945 },
+  { city: "Amsterdam", country: "Netherlands", iso2: "NL", lat: 52.374, lon: 4.8897 },
+  { city: "Anchorage", country: "United States", iso2: "US", lat: 61.2181, lon: -149.9003 },
+  { city: "Andorra la Vella", country: "Andorra", iso2: "AD", lat: 42.5078, lon: 1.5211 },
+  { city: "Ankara", country: "Turkey", iso2: "TR", lat: 39.9199, lon: 32.8543 },
+  { city: "Antananarivo", country: "Madagascar", iso2: "MG", lat: -18.9137, lon: 47.5361 },
+  { city: "Apia", country: "Samoa", iso2: "WS", lat: -13.8333, lon: -171.7667 },
+  { city: "Ashgabat", country: "Turkmenistan", iso2: "TM", lat: 37.95, lon: 58.3833 },
+  { city: "Asmara", country: "Eritrea", iso2: "ER", lat: 15.3381, lon: 38.9318 },
+  { city: "Astana", country: "Kazakhstan", iso2: "KZ", lat: 51.1801, lon: 71.446 },
+  { city: "Asunción", country: "Paraguay", iso2: "PY", lat: -25.2865, lon: -57.647 },
+  { city: "Athens", country: "Greece", iso2: "GR", lat: 37.9838, lon: 23.7278 },
+  { city: "Avarua", country: "Cook Islands", iso2: "CK", lat: -21.2075, lon: -159.7755 },
+  { city: "Baghdad", country: "Iraq", iso2: "IQ", lat: 33.3406, lon: 44.4009 },
+  { city: "Baku", country: "Azerbaijan", iso2: "AZ", lat: 40.3777, lon: 49.892 },
+  { city: "Bamako", country: "Mali", iso2: "ML", lat: 12.6091, lon: -7.9752 },
+  { city: "Bandar Seri Begawan", country: "Brunei", iso2: "BN", lat: 4.8903, lon: 114.9401 },
+  { city: "Bangkok", country: "Thailand", iso2: "TH", lat: 13.754, lon: 100.5014 },
+  { city: "Bangui", country: "Central African Republic", iso2: "CF", lat: 4.3612, lon: 18.555 },
+  { city: "Banjul", country: "Gambia", iso2: "GM", lat: 13.4527, lon: -16.578 },
+  { city: "Barcelona", country: "Spain", iso2: "ES", lat: 41.3851, lon: 2.1734 },
+  { city: "Basse-Terre", country: "Guadeloupe", iso2: "GP", lat: 15.9971, lon: -61.7321 },
+  { city: "Basseterre", country: "Saint Kitts and Nevis", iso2: "KN", lat: 17.2955, lon: -62.725 },
+  { city: "Beijing", country: "China", iso2: "CN", lat: 39.9075, lon: 116.3972 },
+  { city: "Beirut", country: "Lebanon", iso2: "LB", lat: 33.8933, lon: 35.5016 },
+  { city: "Belgrade", country: "Serbia", iso2: "RS", lat: 44.804, lon: 20.4651 },
+  { city: "Belmopan", country: "Belize", iso2: "BZ", lat: 17.2538, lon: -88.764 },
+  { city: "Berlin", country: "Germany", iso2: "DE", lat: 52.5244, lon: 13.4105 },
+  { city: "Berne", country: "Switzerland", iso2: "CH", lat: 46.948, lon: 7.4474 },
+  { city: "Bishkek", country: "Kyrgyzstan", iso2: "KG", lat: 42.87, lon: 74.59 },
+  { city: "Bissau", country: "Guinea-Bissau", iso2: "GW", lat: 11.8636, lon: -15.5977 },
+  { city: "Bogotá", country: "Colombia", iso2: "CO", lat: 4.6097, lon: -74.0817 },
+  { city: "Brasília", country: "Brazil", iso2: "BR", lat: -15.7797, lon: -47.9297 },
+  { city: "Bratislava", country: "Slovakia", iso2: "SK", lat: 48.1482, lon: 17.1067 },
+  { city: "Brazzaville", country: "Congo", iso2: "CG", lat: -4.2661, lon: 15.2832 },
+  { city: "Bridgetown", country: "Barbados", iso2: "BB", lat: 13.1073, lon: -59.6202 },
+  { city: "Brussels", country: "Belgium", iso2: "BE", lat: 50.8505, lon: 4.3488 },
+  { city: "Bucharest", country: "Romania", iso2: "RO", lat: 44.4323, lon: 26.1063 },
+  { city: "Budapest", country: "Hungary", iso2: "HU", lat: 47.4984, lon: 19.0404 },
+  { city: "Buenos Aires", country: "Argentina", iso2: "AR", lat: -34.6131, lon: -58.3772 },
+  { city: "Bujumbura", country: "Burundi", iso2: "BI", lat: -3.3819, lon: 29.3614 },
+  { city: "Cairo", country: "Egypt", iso2: "EG", lat: 30.0626, lon: 31.2497 },
+  { city: "Canberra", country: "Australia", iso2: "AU", lat: -35.2835, lon: 149.1281 },
+  { city: "Cancún", country: "Mexico", iso2: "MX", lat: 21.1619, lon: -86.8515 },
+  { city: "Caracas", country: "Venezuela", iso2: "VE", lat: 10.488, lon: -66.8792 },
+  { city: "Castries", country: "Saint Lucia", iso2: "LC", lat: 13.9957, lon: -61.0061 },
+  { city: "Charlotte Amalie", country: "U.S. Virgin Islands", iso2: "VI", lat: 18.3419, lon: -64.9307 },
+  { city: "Chicago", country: "United States", iso2: "US", lat: 41.8781, lon: -87.6298 },
+  { city: "Chișinău", country: "Moldova", iso2: "MD", lat: 47.009, lon: 28.8594 },
+  { city: "Cockburn Town", country: "Turks and Caicos Islands", iso2: "TC", lat: 21.4612, lon: -71.1419 },
+  { city: "Colombo", country: "Sri Lanka", iso2: "LK", lat: 6.9355, lon: 79.8487 },
+  { city: "Conakry", country: "Guinea", iso2: "GN", lat: 9.538, lon: -13.6773 },
+  { city: "Copenhagen", country: "Denmark", iso2: "DK", lat: 55.6759, lon: 12.5655 },
+  { city: "Dakar", country: "Senegal", iso2: "SN", lat: 14.6937, lon: -17.4441 },
+  { city: "Damascus", country: "Syria", iso2: "SY", lat: 33.5102, lon: 36.2913 },
+  { city: "Dhaka", country: "Bangladesh", iso2: "BD", lat: 23.7104, lon: 90.4074 },
+  { city: "Dili", country: "Timor-Leste", iso2: "TL", lat: -8.5586, lon: 125.5736 },
+  { city: "Djibouti", country: "Djibouti", iso2: "DJ", lat: 11.589, lon: 43.145 },
+  { city: "Dodoma", country: "Tanzania", iso2: "TZ", lat: -6.1722, lon: 35.7395 },
+  { city: "Doha", country: "Qatar", iso2: "QA", lat: 25.2855, lon: 51.531 },
+  { city: "Douglas", country: "Isle of Man", iso2: "IM", lat: 54.15, lon: -4.4833 },
+  { city: "Dublin", country: "Ireland", iso2: "IE", lat: 53.3331, lon: -6.2489 },
+  { city: "Dushanbe", country: "Tajikistan", iso2: "TJ", lat: 38.5358, lon: 68.779 },
+  { city: "East Jerusalem", country: "Palestine", iso2: "PS", lat: 31.7834, lon: 35.2339 },
+  { city: "El Aaiún", country: "Western Sahara", iso2: "EH", lat: 27.1536, lon: -13.2033 },
+  { city: "Flying Fish Cove", country: "Christmas Island", iso2: "CX", lat: -10.4217, lon: 105.6791 },
+  { city: "Fort-de-France", country: "Martinique", iso2: "MQ", lat: 14.6037, lon: -61.0742 },
+  { city: "Freetown", country: "Sierra Leone", iso2: "SL", lat: 8.4871, lon: -13.2356 },
+  { city: "Funafuti", country: "Tuvalu", iso2: "TV", lat: -8.5243, lon: 179.1942 },
+  { city: "Gaborone", country: "Botswana", iso2: "BW", lat: -24.6545, lon: 25.9086 },
+  { city: "George Town", country: "Cayman Islands", iso2: "KY", lat: 19.2866, lon: -81.3744 },
+  { city: "Georgetown", country: "Guyana", iso2: "GY", lat: 6.8045, lon: -58.1553 },
+  { city: "Gibraltar", country: "Gibraltar", iso2: "GI", lat: 36.1447, lon: -5.3526 },
+  { city: "Guatemala City", country: "Guatemala", iso2: "GT", lat: 14.6407, lon: -90.5133 },
+  { city: "Gustavia", country: "Saint Barthelemy", iso2: "BL", lat: 17.8962, lon: -62.8498 },
+  { city: "Hagåtña", country: "Guam", iso2: "GU", lat: 13.4757, lon: 144.7489 },
+  { city: "Hamilton", country: "Bermuda", iso2: "BM", lat: 32.2942, lon: -64.7814 },
+  { city: "Hanoi", country: "Vietnam", iso2: "VN", lat: 21.0245, lon: 105.8412 },
+  { city: "Harare", country: "Zimbabwe", iso2: "ZW", lat: -17.8277, lon: 31.0534 },
+  { city: "Havana", country: "Cuba", iso2: "CU", lat: 23.133, lon: -82.383 },
+  { city: "Helsinki", country: "Finland", iso2: "FI", lat: 60.1695, lon: 24.9354 },
+  { city: "Hong Kong", country: "Hong Kong", iso2: "HK", lat: 22.2783, lon: 114.1747 },
+  { city: "Honiara", country: "Solomon Islands", iso2: "SB", lat: -9.4333, lon: 159.95 },
+  { city: "Honolulu", country: "United States", iso2: "US", lat: 21.3069, lon: -157.8583 },
+  { city: "Islamabad", country: "Pakistan", iso2: "PK", lat: 33.7215, lon: 73.0433 },
+  { city: "Jakarta", country: "Indonesia", iso2: "ID", lat: -6.2146, lon: 106.8451 },
+  { city: "Jamestown", country: "Saint Helena", iso2: "SH", lat: -15.9249, lon: -5.7182 },
+  { city: "Jerusalem", country: "Israel", iso2: "IL", lat: 31.769, lon: 35.2163 },
+  { city: "Juba", country: "South Sudan", iso2: "SS", lat: 4.8517, lon: 31.5825 },
+  { city: "Kabul", country: "Afghanistan", iso2: "AF", lat: 34.5281, lon: 69.1723 },
+  { city: "Kampala", country: "Uganda", iso2: "UG", lat: 0.3163, lon: 32.5822 },
+  { city: "Kathmandu", country: "Nepal", iso2: "NP", lat: 27.7017, lon: 85.3206 },
+  { city: "Khartoum", country: "Sudan", iso2: "SD", lat: 15.5518, lon: 32.5324 },
+  { city: "Kiev", country: "Ukraine", iso2: "UA", lat: 50.4501, lon: 30.5234 },
+  { city: "Kigali", country: "Rwanda", iso2: "RW", lat: -1.95, lon: 30.0588 },
+  { city: "Kingston", country: "Jamaica", iso2: "JM", lat: 17.997, lon: -76.7936 },
+  { city: "Kingston", country: "Norfolk Island", iso2: "NF", lat: -29.0546, lon: 167.9663 },
+  { city: "Kingstown", country: "Saint Vincent and the Grenadines", iso2: "VC", lat: 13.1553, lon: -61.2274 },
+  { city: "Kinshasa", country: "DR Congo", iso2: "CD", lat: -4.3276, lon: 15.3136 },
+  { city: "Kralendijk", country: "Caribbean Netherlands", iso2: "BQ", lat: 12.1443, lon: -68.2656 },
+  { city: "Kuala Lumpur", country: "Malaysia", iso2: "MY", lat: 3.1412, lon: 101.6865 },
+  { city: "Kuwait City", country: "Kuwait", iso2: "KW", lat: 29.367, lon: 47.9743 },
+  { city: "Las Vegas", country: "United States", iso2: "US", lat: 36.1699, lon: -115.1398 },
+  { city: "Libreville", country: "Gabon", iso2: "GA", lat: 0.3924, lon: 9.4536 },
+  { city: "Lilongwe", country: "Malawi", iso2: "MW", lat: -13.9669, lon: 33.7873 },
+  { city: "Lima", country: "Peru", iso2: "PE", lat: -12.0432, lon: -77.0282 },
+  { city: "Lisbon", country: "Portugal", iso2: "PT", lat: 38.7251, lon: -9.1498 },
+  { city: "Ljubljana", country: "Slovenia", iso2: "SI", lat: 46.0511, lon: 14.5051 },
+  { city: "Lomé", country: "Togo", iso2: "TG", lat: 6.1287, lon: 1.2215 },
+  { city: "London", country: "United Kingdom", iso2: "GB", lat: 51.5085, lon: -0.1257 },
+  { city: "Longyearbyen", country: "Svalbard and Jan Mayen", iso2: "SJ", lat: 78.2233, lon: 15.6469 },
+  { city: "Los Angeles", country: "United States", iso2: "US", lat: 34.0522, lon: -118.2437 },
+  { city: "Luanda", country: "Angola", iso2: "AO", lat: -8.8368, lon: 13.2343 },
+  { city: "Lusaka", country: "Zambia", iso2: "ZM", lat: -15.4067, lon: 28.2871 },
+  { city: "Luxembourg", country: "Luxembourg", iso2: "LU", lat: 49.75, lon: 6.1667 },
+  { city: "Macao", country: "Macau", iso2: "MO", lat: 22.2006, lon: 113.5461 },
+  { city: "Madrid", country: "Spain", iso2: "ES", lat: 40.4165, lon: -3.7026 },
+  { city: "Majuro", country: "Marshall Islands", iso2: "MH", lat: 7.0897, lon: 171.3803 },
+  { city: "Malabo", country: "Equatorial Guinea", iso2: "GQ", lat: 3.7558, lon: 8.7817 },
+  { city: "Malé", country: "Maldives", iso2: "MV", lat: 4.1752, lon: 73.5092 },
+  { city: "Mamoudzou", country: "Mayotte", iso2: "YT", lat: -12.7823, lon: 45.2288 },
+  { city: "Managua", country: "Nicaragua", iso2: "NI", lat: 12.1328, lon: -86.2504 },
+  { city: "Manama", country: "Bahrain", iso2: "BH", lat: 26.2279, lon: 50.5857 },
+  { city: "Manila", country: "Philippines", iso2: "PH", lat: 14.6042, lon: 120.9822 },
+  { city: "Maputo", country: "Mozambique", iso2: "MZ", lat: -25.9655, lon: 32.5832 },
+  { city: "Mariehamn", country: "Aland Islands", iso2: "AX", lat: 60.0973, lon: 19.9348 },
+  { city: "Marigot", country: "Saint Martin", iso2: "MF", lat: 18.0682, lon: -63.083 },
+  { city: "Marrakech", country: "Morocco", iso2: "MA", lat: 31.6295, lon: -7.9811 },
+  { city: "Maseru", country: "Lesotho", iso2: "LS", lat: -29.3167, lon: 27.4833 },
+  { city: "Mbabane", country: "Eswatini", iso2: "SZ", lat: -26.3167, lon: 31.1333 },
+  { city: "Melbourne", country: "Australia", iso2: "AU", lat: -37.8136, lon: 144.9631 },
+  { city: "Melekeok Village", country: "Palau", iso2: "PW", lat: 7.4957, lon: 134.6367 },
+  { city: "Mexico City", country: "Mexico", iso2: "MX", lat: 19.4285, lon: -99.1277 },
+  { city: "Miami", country: "United States", iso2: "US", lat: 25.7617, lon: -80.1918 },
+  { city: "Minsk", country: "Belarus", iso2: "BY", lat: 53.9002, lon: 27.5665 },
+  { city: "Mogadishu", country: "Somalia", iso2: "SO", lat: 2.0371, lon: 45.3438 },
+  { city: "Monaco", country: "Monaco", iso2: "MC", lat: 43.7372, lon: 7.4215 },
+  { city: "Monrovia", country: "Liberia", iso2: "LR", lat: 6.3005, lon: -10.7969 },
+  { city: "Montevideo", country: "Uruguay", iso2: "UY", lat: -34.9033, lon: -56.1882 },
+  { city: "Moroni", country: "Comoros", iso2: "KM", lat: -11.7022, lon: 43.2551 },
+  { city: "Moscow", country: "Russia", iso2: "RU", lat: 55.752, lon: 37.6178 },
+  { city: "Muscat", country: "Oman", iso2: "OM", lat: 23.5841, lon: 58.4078 },
+  { city: "N\'Djamena", country: "Chad", iso2: "TD", lat: 12.1067, lon: 15.0444 },
+  { city: "Nairobi", country: "Kenya", iso2: "KE", lat: -1.2833, lon: 36.8167 },
+  { city: "Nassau", country: "Bahamas", iso2: "BS", lat: 25.0582, lon: -77.3431 },
+  { city: "Nay Pyi Taw", country: "Myanmar", iso2: "MM", lat: 19.745, lon: 96.1297 },
+  { city: "New Delhi", country: "India", iso2: "IN", lat: 28.6214, lon: 77.2148 },
+  { city: "New York", country: "United States", iso2: "US", lat: 40.7128, lon: -74.006 },
+  { city: "Niamey", country: "Niger", iso2: "NE", lat: 13.5137, lon: 2.1098 },
+  { city: "Nicosia", country: "Cyprus", iso2: "CY", lat: 35.1728, lon: 33.354 },
+  { city: "Nouakchott", country: "Mauritania", iso2: "MR", lat: 18.0858, lon: -15.9785 },
+  { city: "Noumea", country: "New Caledonia", iso2: "NC", lat: -22.2741, lon: 166.4488 },
+  { city: "Nuku\'alofa", country: "Tonga", iso2: "TO", lat: -21.1368, lon: -175.2011 },
+  { city: "Nuuk", country: "Greenland", iso2: "GL", lat: 64.1835, lon: -51.7216 },
+  { city: "Oranjestad", country: "Aruba", iso2: "AW", lat: 12.524, lon: -70.027 },
+  { city: "Oslo", country: "Norway", iso2: "NO", lat: 59.9127, lon: 10.7461 },
+  { city: "Ottawa", country: "Canada", iso2: "CA", lat: 45.4112, lon: -75.6981 },
+  { city: "Ouagadougou", country: "Burkina Faso", iso2: "BF", lat: 12.3657, lon: -1.5339 },
+  { city: "Palikir", country: "Micronesia", iso2: "FM", lat: 6.9248, lon: 158.1611 },
+  { city: "Panama City", country: "Panama", iso2: "PA", lat: 8.9936, lon: -79.5197 },
+  { city: "Papeete", country: "French Polynesia", iso2: "PF", lat: -17.5347, lon: -149.5684 },
+  { city: "Paramaribo", country: "Suriname", iso2: "SR", lat: 5.8664, lon: -55.1668 },
+  { city: "Paris", country: "France", iso2: "FR", lat: 48.8534, lon: 2.3488 },
+  { city: "Philipsburg", country: "Sint Maarten", iso2: "SX", lat: 18.026, lon: -63.0458 },
+  { city: "Phnom Penh", country: "Cambodia", iso2: "KH", lat: 11.5625, lon: 104.916 },
+  { city: "Phuket", country: "Thailand", iso2: "TH", lat: 7.8804, lon: 98.3923 },
+  { city: "Plymouth", country: "Montserrat", iso2: "MS", lat: 16.7055, lon: -62.2129 },
+  { city: "Podgorica", country: "Montenegro", iso2: "ME", lat: 42.4412, lon: 19.2631 },
+  { city: "Port Louis", country: "Mauritius", iso2: "MU", lat: -20.1619, lon: 57.4989 },
+  { city: "Port Moresby", country: "Papua New Guinea", iso2: "PG", lat: -9.4772, lon: 147.1509 },
+  { city: "Port of Spain", country: "Trinidad and Tobago", iso2: "TT", lat: 10.6667, lon: -61.5189 },
+  { city: "Port Vila", country: "Vanuatu", iso2: "VU", lat: -17.7365, lon: 168.3137 },
+  { city: "Port-au-Prince", country: "Haiti", iso2: "HT", lat: 18.5435, lon: -72.3388 },
+  { city: "Porto-Novo", country: "Benin", iso2: "BJ", lat: 6.4965, lon: 2.6036 },
+  { city: "Prague", country: "Czech Republic", iso2: "CZ", lat: 50.088, lon: 14.4208 },
+  { city: "Praia", country: "Cabo Verde", iso2: "CV", lat: 14.9315, lon: -23.5125 },
+  { city: "Pretoria", country: "South Africa", iso2: "ZA", lat: -25.7449, lon: 28.1878 },
+  { city: "Pristina", country: "Kosovo", iso2: "XK", lat: 42.6727, lon: 21.1669 },
+  { city: "Pyongyang", country: "North Korea", iso2: "KP", lat: 39.0339, lon: 125.7543 },
+  { city: "Quito", country: "Ecuador", iso2: "EC", lat: -0.2298, lon: -78.525 },
+  { city: "Rabat", country: "Morocco", iso2: "MA", lat: 34.0132, lon: -6.8326 },
+  { city: "Reykjavik", country: "Iceland", iso2: "IS", lat: 64.1355, lon: -21.8954 },
+  { city: "Riga", country: "Latvia", iso2: "LV", lat: 56.946, lon: 24.1059 },
+  { city: "Riyadh", country: "Saudi Arabia", iso2: "SA", lat: 24.6877, lon: 46.7219 },
+  { city: "Road Town", country: "British Virgin Islands", iso2: "VG", lat: 18.4269, lon: -64.6208 },
+  { city: "Rome", country: "Italy", iso2: "IT", lat: 41.8919, lon: 12.5113 },
+  { city: "Roseau", country: "Dominica", iso2: "DM", lat: 15.3017, lon: -61.3881 },
+  { city: "Saint Helier", country: "Jersey", iso2: "JE", lat: 49.188, lon: -2.1049 },
+  { city: "Saint-Denis", country: "Réunion", iso2: "RE", lat: -20.8823, lon: 55.4504 },
+  { city: "Saint-Pierre", country: "Saint Pierre and Miquelon", iso2: "PM", lat: 46.7791, lon: -56.1773 },
+  { city: "Saipan", country: "Northern Mariana Islands", iso2: "MP", lat: 15.2123, lon: 145.7545 },
+  { city: "San Francisco", country: "United States", iso2: "US", lat: 37.7749, lon: -122.4194 },
+  { city: "San José", country: "Costa Rica", iso2: "CR", lat: 9.9339, lon: -84.0849 },
+  { city: "San Juan", country: "Puerto Rico", iso2: "PR", lat: 18.4663, lon: -66.1057 },
+  { city: "San Marino", country: "San Marino", iso2: "SM", lat: 43.9367, lon: 12.4464 },
+  { city: "San Salvador", country: "El Salvador", iso2: "SV", lat: 13.6893, lon: -89.1872 },
+  { city: "Sanaa", country: "Yemen", iso2: "YE", lat: 15.3545, lon: 44.2065 },
+  { city: "Santiago", country: "Chile", iso2: "CL", lat: -33.4569, lon: -70.6483 },
+  { city: "Santo Domingo", country: "Dominican Republic", iso2: "DO", lat: 18.4719, lon: -69.8923 },
+  { city: "Santorini", country: "Greece", iso2: "GR", lat: 36.3932, lon: 25.4615 },
+  { city: "Sarajevo", country: "Bosnia and Herzegovina", iso2: "BA", lat: 43.8486, lon: 18.3564 },
+  { city: "Seoul", country: "South Korea", iso2: "KR", lat: 37.566, lon: 126.9784 },
+  { city: "Singāpur", country: "Singapore", iso2: "SG", lat: 1.3521, lon: 103.8198 },
+  { city: "Skopje", country: "North Macedonia", iso2: "MK", lat: 41.9965, lon: 21.4314 },
+  { city: "Sofia", country: "Bulgaria", iso2: "BG", lat: 42.6975, lon: 23.3241 },
+  { city: "St Peter Port", country: "Guernsey", iso2: "GG", lat: 49.4598, lon: -2.5353 },
+  { city: "St. George\'s", country: "Grenada", iso2: "GD", lat: 12.0529, lon: -61.7523 },
+  { city: "St. John\'s", country: "Antigua and Barbuda", iso2: "AG", lat: 17.118, lon: -61.845 },
+  { city: "Stanley", country: "Falkland Islands", iso2: "FK", lat: -51.6938, lon: -57.857 },
+  { city: "Stockholm", country: "Sweden", iso2: "SE", lat: 59.3294, lon: 18.0687 },
+  { city: "Sucre", country: "Bolivia", iso2: "BO", lat: -19.0333, lon: -65.2627 },
+  { city: "Suva", country: "Fiji", iso2: "FJ", lat: -18.1368, lon: 178.4253 },
+  { city: "Sydney", country: "Australia", iso2: "AU", lat: -33.8688, lon: 151.2093 },
+  { city: "São Tomé", country: "Sao Tome and Principe", iso2: "ST", lat: 0.3376, lon: 6.7299 },
+  { city: "Taipei", country: "Taiwan", iso2: "TW", lat: 25.0531, lon: 121.5264 },
+  { city: "Tallinn", country: "Estonia", iso2: "EE", lat: 59.437, lon: 24.7535 },
+  { city: "Tarawa", country: "Kiribati", iso2: "KI", lat: 1.3278, lon: 172.977 },
+  { city: "Tashkent", country: "Uzbekistan", iso2: "UZ", lat: 41.2647, lon: 69.2163 },
+  { city: "Tbilisi", country: "Georgia", iso2: "GE", lat: 41.6914, lon: 44.8341 },
+  { city: "Tegucigalpa", country: "Honduras", iso2: "HN", lat: 14.0818, lon: -87.2068 },
+  { city: "Tehran", country: "Iran", iso2: "IR", lat: 35.6944, lon: 51.4215 },
+  { city: "The Valley", country: "Anguilla", iso2: "AI", lat: 18.217, lon: -63.0578 },
+  { city: "Thimphu", country: "Bhutan", iso2: "BT", lat: 27.4661, lon: 89.6419 },
+  { city: "Tirana", country: "Albania", iso2: "AL", lat: 41.3274, lon: 19.8187 },
+  { city: "Tokyo", country: "Japan", iso2: "JP", lat: 35.6895, lon: 139.6917 },
+  { city: "Tripoliszlakótelep", country: "Libya", iso2: "LY", lat: 32.8872, lon: 13.1913 },
+  { city: "Tunis", country: "Tunisia", iso2: "TN", lat: 36.819, lon: 10.1658 },
+  { city: "Tórshavn", country: "Faroe Islands", iso2: "FO", lat: 62.0097, lon: -6.7716 },
+  { city: "Ulaanbaatar", country: "Mongolia", iso2: "MN", lat: 47.9077, lon: 106.8832 },
+  { city: "Vaduz", country: "Liechtenstein", iso2: "LI", lat: 47.1415, lon: 9.5215 },
+  { city: "Valletta", country: "Malta", iso2: "MT", lat: 35.8997, lon: 14.5148 },
+  { city: "Victoria", country: "Seychelles", iso2: "SC", lat: -4.62, lon: 55.455 },
+  { city: "Vienna", country: "Austria", iso2: "AT", lat: 48.2085, lon: 16.3721 },
+  { city: "Vientiane", country: "Laos", iso2: "LA", lat: 17.9667, lon: 102.6 },
+  { city: "Vilnius", country: "Lithuania", iso2: "LT", lat: 54.6892, lon: 25.2798 },
+  { city: "Warsaw", country: "Poland", iso2: "PL", lat: 52.2298, lon: 21.0118 },
+  { city: "Washington D.C.", country: "United States", iso2: "US", lat: 38.8951, lon: -77.0364 },
+  { city: "Wellington", country: "New Zealand", iso2: "NZ", lat: -41.2866, lon: 174.7756 },
+  { city: "Willemstad", country: "Curacao", iso2: "CW", lat: 12.1225, lon: -68.8864 },
+  { city: "Windhoek", country: "Namibia", iso2: "NA", lat: -22.5594, lon: 17.0832 },
+  { city: "Yamoussoukro", country: "Côte d\'Ivoire", iso2: "CI", lat: 6.8205, lon: -5.2767 },
+  { city: "Yaoundé", country: "Cameroon", iso2: "CM", lat: 3.8667, lon: 11.5167 },
+  { city: "Yaren District", country: "Nauru", iso2: "NR", lat: -0.5508, lon: 166.9252 },
+  { city: "Yerevan", country: "Armenia", iso2: "AM", lat: 40.1776, lon: 44.5126 },
+  { city: "Zagreb", country: "Croatia", iso2: "HR", lat: 45.8144, lon: 15.978 },
+];
+
+    // ISO2 -> emoji flag (e.g. "IE" -> 🇮🇪)
+    function flagEmoji(iso2) {
+      if (!iso2) return "🌍";
+      const code = iso2.toUpperCase();
+      if (!/^[A-Z]{2}$/.test(code)) return "🌍";
+      return String.fromCodePoint(...[...code].map(c => 127397 + c.charCodeAt(0)));
+    }
 
     function haversineKm(lat1, lon1, lat2, lon2) {
       const R = 6371;
@@ -179,17 +362,17 @@
 
     function App() {
       const [location, setLocation] = useState(null);
+      const [locationIso2, setLocationIso2] = useState("");
       const [currentWeather, setCurrentWeather] = useState(null);
-      const [allDestinations, setAllDestinations] = useState([]); // all with weather + distance
+      const [allDestinations, setAllDestinations] = useState([]);
       const [loading, setLoading] = useState(true);
       const [error, setError] = useState(null);
       const [phase, setPhase] = useState("locating");
       const [locationName, setLocationName] = useState("");
       const [locationSource, setLocationSource] = useState("");
-      const [maxDistance, setMaxDistance] = useState(15000); // km
+      const [maxDistance, setMaxDistance] = useState(15000);
       const [widened, setWidened] = useState(false);
 
-      // Picker state
       const [searchQuery, setSearchQuery] = useState("");
       const [searchResults, setSearchResults] = useState([]);
       const [showResults, setShowResults] = useState(false);
@@ -253,7 +436,6 @@
         await fetchWeather(defaultLat, defaultLon);
       };
 
-      // Search cities via Open-Meteo geocoding
       const handleSearch = async () => {
         if (!searchQuery.trim()) return;
         setSearching(true);
@@ -266,6 +448,7 @@
             name: r.name,
             country: r.country || "",
             admin1: r.admin1 || "",
+            country_code: r.country_code || "",
             lat: r.latitude,
             lon: r.longitude
           })));
@@ -286,12 +469,13 @@
         setCurrentWeather(null);
         setPhase("weather");
         setLocation({ lat: city.lat, lon: city.lon });
+        setLocationIso2(city.country_code);
         setLocationSource("picked");
         setLocationName(city.admin1 ? `${city.name}, ${city.admin1}, ${city.country}` : `${city.name}, ${city.country}`);
         await fetchWeather(city.lat, city.lon);
       };
 
-      // Fetch current weather + ALL destination weather in ONE batched call
+      // Fetch current weather + ALL destinations in ONE batched call
       const fetchWeather = async (lat, lon) => {
         try {
           const latParams = [lat, ...DESTINATIONS.map(d => d.lat)].join(',');
@@ -302,11 +486,8 @@
           );
           const data = await response.json();
 
-          // Batched requests return a top-level array (one entry per location);
-          // single-location requests return an object with .current
           const results = Array.isArray(data) ? data : [data];
 
-          // First entry = current location
           setCurrentWeather({
             temp: results[0]?.current?.temperature_2m,
             code: results[0]?.current?.weather_code,
@@ -314,9 +495,9 @@
             lon
           });
 
-          // Rest = destinations, with distance from user
           const dests = DESTINATIONS.map((d, i) => ({
             ...d,
+            id: d.city + '-' + d.iso2,
             temp: results[i + 1]?.current?.temperature_2m ?? null,
             code: results[i + 1]?.current?.weather_code ?? 0,
             distance: haversineKm(lat, lon, d.lat, d.lon)
@@ -331,7 +512,7 @@
         }
       };
 
-      // Get location name from coordinates (when auto-detected)
+      // Reverse geocode auto-detected location
       useEffect(() => {
         if (location && locationSource !== "picked") {
           fetch(`https://nominatim.openstreetmap.org/reverse?lat=${location.lat}&lon=${location.lon}&format=json`)
@@ -340,12 +521,12 @@
               const city = data.address.city || data.address.town || data.address.village || data.address.county;
               const country = data.address.country_code?.toUpperCase();
               setLocationName(city ? `${city}, ${country}` : "Your Location");
+              if (data.address.country_code) setLocationIso2(data.address.country_code.toUpperCase());
             })
             .catch(() => setLocationName("Your Location"));
         }
       }, [location]);
 
-      // Filter destinations by max flight distance
       const filtered = useMemo(() => {
         if (!allDestinations.length) return { list: [], widened: false };
         const withTemp = allDestinations.filter(d => d.temp !== null);
@@ -353,7 +534,6 @@
         if (within.length >= 3) {
           return { list: within.sort((a, b) => b.temp - a.temp), widened: false };
         }
-        // Not enough within range: widen to nearest destinations
         const nearest = [...withTemp].sort((a, b) => a.distance - b.distance).slice(0, 5);
         return { list: nearest.sort((a, b) => b.temp - a.temp), widened: true };
       }, [allDestinations, maxDistance]);
@@ -390,7 +570,7 @@
                 <span className="gradient-text">Weather Flight Finder</span>
               </h1>
               <p className="text-gray-400 text-lg">
-                Find the hottest and coldest destinations within non-stop flight range
+                Find the hottest and coldest of 250+ world capitals within non-stop flight range
               </p>
             </header>
 
@@ -430,7 +610,9 @@
                         className="w-full text-left px-5 py-3 hover:bg-purple-500/20 transition-colors flex items-center justify-between border-b border-white/5 last:border-0"
                       >
                         <div>
-                          <p className="text-white font-semibold">📍 {city.name}</p>
+                          <p className="text-white font-semibold">
+                            <span className="flag">{flagEmoji(city.country_code)}</span> {city.name}
+                          </p>
                           <p className="text-gray-400 text-sm">
                             {[city.admin1, city.country].filter(Boolean).join(", ")}
                           </p>
@@ -484,7 +666,7 @@
                   <p className="text-gray-500 text-sm mt-3">
                     {filtered.widened
                       ? `⚠️ Fewer than 3 destinations within ${formatKm(maxDistance)} — showing the nearest ${filtered.list.length} instead.`
-                      : `${filtered.list.length} destinations within ${formatKm(maxDistance)} non-stop flight range (of ${allDestinations.length} total).`}
+                      : `${filtered.list.length} of ${allDestinations.length} destinations within ${formatKm(maxDistance)} non-stop flight range.`}
                   </p>
                 </div>
               </div>
@@ -501,7 +683,10 @@
                           {sourceBadge()}
                         </span>
                       </p>
-                      <h2 className="text-3xl font-bold text-white mb-1">{locationName}</h2>
+                      <h2 className="text-3xl font-bold text-white mb-1">
+                        <span className="flag mr-2">{flagEmoji(locationIso2)}</span>
+                        {locationName}
+                      </h2>
                       <p className="text-5xl font-bold text-white">
                         {getTempIcon(currentWeather.temp)} {currentWeather.temp.toFixed(0)}°C
                       </p>
@@ -523,7 +708,7 @@
                 <p className="text-white text-xl mt-6">
                   {phase === "locating" && "Finding your location..."}
                   {phase === "weather" && "Checking your weather..."}
-                  {phase === "destinations" && "Scanning flight destinations..."}
+                  {phase === "destinations" && "Scanning 250+ flight destinations..."}
                 </p>
               </div>
             )}
@@ -540,7 +725,8 @@
                       </div>
                     </div>
                     <h3 className="text-2xl font-bold text-white mb-1">
-                      {hottest.emoji} {hottest.city}
+                      <span className="flag mr-2">{flagEmoji(hottest.iso2)}</span>
+                      {hottest.city}
                     </h3>
                     <p className="text-gray-400">{hottest.country}</p>
                     <p className="text-purple-300 text-sm mt-1">✈️ {formatKm(hottest.distance)} away</p>
@@ -556,7 +742,8 @@
                       </div>
                     </div>
                     <h3 className="text-2xl font-bold text-white mb-1">
-                      {coldest.emoji} {coldest.city}
+                      <span className="flag mr-2">{flagEmoji(coldest.iso2)}</span>
+                      {coldest.city}
                     </h3>
                     <p className="text-gray-400">{coldest.country}</p>
                     <p className="text-purple-300 text-sm mt-1">✈️ {formatKm(coldest.distance)} away</p>
@@ -572,13 +759,13 @@
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                     {displayList.map((dest) => (
                       <div
-                        key={dest.city}
+                        key={dest.id}
                         className={`bg-white/5 rounded-2xl p-4 border border-white/10 hover:border-white/20 transition-all hover:scale-105 ${
-                          dest.city === hottest.city ? 'ring-2 ring-orange-500' : ''
-                        } ${dest.city === coldest.city ? 'ring-2 ring-cyan-500' : ''}`}
+                          dest.id === hottest.id ? 'ring-2 ring-orange-500' : ''
+                        } ${dest.id === coldest.id ? 'ring-2 ring-cyan-500' : ''}`}
                       >
                         <div className="flex items-start justify-between mb-2">
-                          <span className="text-3xl">{dest.emoji}</span>
+                          <span className="flag text-3xl">{flagEmoji(dest.iso2)}</span>
                           <span className="text-2xl">{getWeatherIcon(dest.code)}</span>
                         </div>
                         <h4 className="font-bold text-white text-lg">{dest.city}</h4>
@@ -586,10 +773,10 @@
                         <p className="text-gray-500 text-xs mb-2">✈️ {formatKm(dest.distance)}</p>
                         <div className="flex items-center gap-2">
                           <span className="text-xl font-bold text-white">{dest.temp.toFixed(0)}°C</span>
-                          {dest.city === hottest.city && (
+                          {dest.id === hottest.id && (
                             <span className="text-xs bg-orange-500/30 text-orange-300 px-2 py-1 rounded-full">HOTTEST</span>
                           )}
-                          {dest.city === coldest.city && (
+                          {dest.id === coldest.id && (
                             <span className="text-xs bg-cyan-500/30 text-cyan-300 px-2 py-1 rounded-full">COLDEST</span>
                           )}
                         </div>
@@ -619,7 +806,7 @@
 
             <footer className="mt-16 text-center text-gray-500 text-sm">
               <p>Weather data powered by <span className="text-purple-400">Open-Meteo</span></p>
-              <p className="mt-1">Distances are great-circle (haversine) approximations. All temperatures in °C.</p>
+              <p className="mt-1">252 world capitals + major cities · Distances are great-circle approximations · All temperatures in °C</p>
             </footer>
           </div>
         </div>
