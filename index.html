@@ -590,6 +590,8 @@ const DESTINATIONS = [
       const hottest = filtered.list[0] || null;
       const coldest = filtered.list[filtered.list.length - 1] || null;
       const displayList = filtered.list.slice(0, 18);
+      const hottestList = filtered.list.slice(0, 6);
+      const coldestList = [...filtered.list].slice(-6).reverse();
       const sliderFill = ((maxDistance - 500) / (16000 - 500)) * 100;
 
       const sourceBadge = () => {
@@ -820,6 +822,69 @@ const DESTINATIONS = [
                     <p className="text-purple-300 text-sm mt-1">✈️ {formatKm(coldest.distance)} away</p>
                     <p className="text-5xl mt-4">{getWeatherIcon(coldest.code)}</p>
                     <p className="text-purple-300/70 text-xs mt-3 font-medium">📅 Tap for 3-day forecast</p>
+                  </div>
+                </div>
+
+                {/* Top Hottest & Top Coldest ranked lists */}
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div className="bg-white/5 rounded-3xl p-6 border border-orange-500/20">
+                    <h3 className="text-xl font-bold text-white mb-1 flex items-center gap-2">
+                      🔥 Top Hottest
+                      <span className="text-sm font-normal text-gray-400">(top {hottestList.length})</span>
+                    </h3>
+                    <p className="text-gray-500 text-xs mb-4">Tap a row for the 3-day forecast</p>
+                    <div className="space-y-2">
+                      {hottestList.map((dest, i) => (
+                        <button
+                          key={dest.id}
+                          onClick={() => openForecast(dest)}
+                          className="w-full text-left bg-white/5 hover:bg-orange-500/15 rounded-xl p-3 flex items-center gap-3 transition-colors"
+                        >
+                          <span className="w-8 shrink-0 text-center">
+                            {i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : (
+                              <span className="inline-flex w-6 h-6 rounded-full bg-white/10 text-gray-300 text-xs font-bold items-center justify-center">{i + 1}</span>
+                            )}
+                          </span>
+                          <span className="flag text-2xl">{flagEmoji(dest.iso2)}</span>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-white font-semibold truncate">{dest.city}</p>
+                            <p className="text-gray-500 text-xs">✈️ {formatKm(dest.distance)}</p>
+                          </div>
+                          <span className="text-2xl">{getWeatherIcon(dest.code)}</span>
+                          <span className="text-lg font-bold text-orange-300">{dest.temp.toFixed(0)}°C</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="bg-white/5 rounded-3xl p-6 border border-cyan-500/20">
+                    <h3 className="text-xl font-bold text-white mb-1 flex items-center gap-2">
+                      ❄️ Top Coldest
+                      <span className="text-sm font-normal text-gray-400">(top {coldestList.length})</span>
+                    </h3>
+                    <p className="text-gray-500 text-xs mb-4">Tap a row for the 3-day forecast</p>
+                    <div className="space-y-2">
+                      {coldestList.map((dest, i) => (
+                        <button
+                          key={dest.id}
+                          onClick={() => openForecast(dest)}
+                          className="w-full text-left bg-white/5 hover:bg-cyan-500/15 rounded-xl p-3 flex items-center gap-3 transition-colors"
+                        >
+                          <span className="w-8 shrink-0 text-center">
+                            {i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : (
+                              <span className="inline-flex w-6 h-6 rounded-full bg-white/10 text-gray-300 text-xs font-bold items-center justify-center">{i + 1}</span>
+                            )}
+                          </span>
+                          <span className="flag text-2xl">{flagEmoji(dest.iso2)}</span>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-white font-semibold truncate">{dest.city}</p>
+                            <p className="text-gray-500 text-xs">✈️ {formatKm(dest.distance)}</p>
+                          </div>
+                          <span className="text-2xl">{getWeatherIcon(dest.code)}</span>
+                          <span className="text-lg font-bold text-cyan-300">{dest.temp.toFixed(0)}°C</span>
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
 
