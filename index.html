@@ -360,6 +360,20 @@ const DESTINATIONS = [
       return "❄️";
     }
 
+    function weatherText(code) {
+      if (code === 0) return "Clear sky";
+      if (code === 1) return "Mainly clear";
+      if (code === 2) return "Partly cloudy";
+      if (code === 3) return "Overcast";
+      if (code <= 48) return "Fog";
+      if (code <= 57) return "Drizzle";
+      if (code <= 67) return "Rain";
+      if (code <= 77) return "Snow";
+      if (code <= 82) return "Rain showers";
+      if (code <= 86) return "Snow showers";
+      return "Thunderstorm";
+    }
+
     function App() {
       const [location, setLocation] = useState(null);
       const [locationIso2, setLocationIso2] = useState("");
@@ -372,6 +386,11 @@ const DESTINATIONS = [
       const [locationSource, setLocationSource] = useState("");
       const [maxDistance, setMaxDistance] = useState(15000);
       const [widened, setWidened] = useState(false);
+
+      const [selectedDest, setSelectedDest] = useState(null);
+      const [forecastData, setForecastData] = useState(null);
+      const [forecastLoading, setForecastLoading] = useState(false);
+      const [forecastError, setForecastError] = useState(null);
 
       const [searchQuery, setSearchQuery] = useState("");
       const [searchResults, setSearchResults] = useState([]);
@@ -390,6 +409,12 @@ const DESTINATIONS = [
       }, []);
 
       useEffect(() => { detectLocation(); }, []);
+
+      useEffect(() => {
+        function onKey(e) { if (e.key === 'Escape') closeForecast(); }
+        document.addEventListener('keydown', onKey);
+        return () => document.removeEventListener('keydown', onKey);
+      }, []);
 
       const detectLocation = async () => {
         setLoading(true);
@@ -510,6 +535,30 @@ const DESTINATIONS = [
           setError("Failed to fetch weather data");
           setLoading(false);
         }
+      };
+
+      // Fetch a 3-day forecast for a tapped destination (on demand, single call)
+      const openForecast = async (dest) => {
+        setSelectedDest(dest);
+        setForecastLoading(true);
+        setForecastError(null);
+        setForecastData(null);
+        try {
+          const res = await fetch(
+            `https://api.open-meteo.com/v1/forecast?latitude=${dest.lat}&longitude=${dest.lon}&current=temperature_2m,weather_code,apparent_temperature,relative_humidity_2m,wind_speed_10m&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,weather_code,wind_speed_10m_max,uv_index_max&forecast_days=3&timezone=auto`
+          );
+          const data = await res.json();
+          setForecastData(data);
+        } catch (e) {
+          setForecastError("Couldn't load the forecast. Try again.");
+        }
+        setForecastLoading(false);
+      };
+
+      const closeForecast = () => {
+        setSelectedDest(null);
+        setForecastData(null);
+        setForecastError(null);
       };
 
       // Reverse geocode auto-detected location
@@ -693,6 +742,21 @@ const DESTINATIONS = [
                     </div>
                     <div className="text-center md:text-right">
                       <p className="text-8xl float-animation">{getWeatherIcon(currentWeather.code)}</p>
+                      <button
+                        onClick={() => openForecast({
+                          lat: currentWeather.lat,
+                          lon: currentWeather.lon,
+                          city: locationName,
+                          country: "",
+                          iso2: locationIso2,
+                          distance: 0,
+                          temp: currentWeather.temp,
+                          code: currentWeather.code
+                        })}
+                        className="mt-3 text-xs bg-purple-500/30 text-purple-200 px-4 py-2 rounded-full font-semibold hover:bg-purple-500/50 transition-colors"
+                      >
+                        📅 3-day forecast
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -716,7 +780,10 @@ const DESTINATIONS = [
             {!loading && hottest && coldest && (
               <div className="space-y-8">
                 <div className="grid md:grid-cols-2 gap-6">
-                  <div className="bg-gradient-to-br from-orange-500/20 to-red-500/20 rounded-3xl p-8 border border-orange-500/30 card-glow pulse-glow">
+                  <div
+                    onClick={() => openForecast(hottest)}
+                    className="bg-gradient-to-br from-orange-500/20 to-red-500/20 rounded-3xl p-8 border border-orange-500/30 card-glow pulse-glow cursor-pointer hover:scale-[1.02] transition-transform"
+                  >
                     <div className="flex items-center gap-3 mb-4">
                       <span className="text-4xl">🔥</span>
                       <div>
@@ -731,9 +798,13 @@ const DESTINATIONS = [
                     <p className="text-gray-400">{hottest.country}</p>
                     <p className="text-purple-300 text-sm mt-1">✈️ {formatKm(hottest.distance)} away</p>
                     <p className="text-5xl mt-4">{getWeatherIcon(hottest.code)}</p>
+                    <p className="text-purple-300/70 text-xs mt-3 font-medium">📅 Tap for 3-day forecast</p>
                   </div>
 
-                  <div className="bg-gradient-to-br from-cyan-500/20 to-blue-500/20 rounded-3xl p-8 border border-cyan-500/30 card-glow pulse-glow">
+                  <div
+                    onClick={() => openForecast(coldest)}
+                    className="bg-gradient-to-br from-cyan-500/20 to-blue-500/20 rounded-3xl p-8 border border-cyan-500/30 card-glow pulse-glow cursor-pointer hover:scale-[1.02] transition-transform"
+                  >
                     <div className="flex items-center gap-3 mb-4">
                       <span className="text-4xl">❄️</span>
                       <div>
@@ -748,6 +819,7 @@ const DESTINATIONS = [
                     <p className="text-gray-400">{coldest.country}</p>
                     <p className="text-purple-300 text-sm mt-1">✈️ {formatKm(coldest.distance)} away</p>
                     <p className="text-5xl mt-4">{getWeatherIcon(coldest.code)}</p>
+                    <p className="text-purple-300/70 text-xs mt-3 font-medium">📅 Tap for 3-day forecast</p>
                   </div>
                 </div>
 
@@ -760,7 +832,8 @@ const DESTINATIONS = [
                     {displayList.map((dest) => (
                       <div
                         key={dest.id}
-                        className={`bg-white/5 rounded-2xl p-4 border border-white/10 hover:border-white/20 transition-all hover:scale-105 ${
+                        onClick={() => openForecast(dest)}
+                        className={`bg-white/5 rounded-2xl p-4 border border-white/10 hover:border-white/20 transition-all hover:scale-105 cursor-pointer ${
                           dest.id === hottest.id ? 'ring-2 ring-orange-500' : ''
                         } ${dest.id === coldest.id ? 'ring-2 ring-cyan-500' : ''}`}
                       >
@@ -786,6 +859,7 @@ const DESTINATIONS = [
                             style={{ width: `${Math.min(100, Math.max(0, ((dest.temp + 10) / 50) * 100))}%` }}
                           ></div>
                         </div>
+                        <p className="text-purple-400/70 text-[10px] mt-2 font-medium">📅 Tap for 3-day forecast</p>
                       </div>
                     ))}
                   </div>
@@ -799,6 +873,110 @@ const DESTINATIONS = [
                     <span>10°C</span>
                     <span>30°C</span>
                     <span>50°C</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Forecast modal */}
+            {selectedDest && (
+              <div
+                className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+                onClick={closeForecast}
+              >
+                <div
+                  className="bg-slate-800/95 border border-white/15 rounded-3xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="p-6 border-b border-white/10 flex items-start justify-between gap-4">
+                    <div className="flex items-center gap-4">
+                      <span className="flag text-5xl">{flagEmoji(selectedDest.iso2)}</span>
+                      <div>
+                        <h3 className="text-2xl font-bold text-white">{selectedDest.city}</h3>
+                        <p className="text-gray-400">{selectedDest.country}</p>
+                        {selectedDest.distance > 0 && (
+                          <p className="text-purple-300 text-sm mt-1">✈️ {formatKm(selectedDest.distance)} away</p>
+                        )}
+                      </div>
+                    </div>
+                    <button
+                      onClick={closeForecast}
+                      className="text-gray-400 hover:text-white text-2xl leading-none px-2 py-1 transition-colors"
+                    >
+                      ✕
+                    </button>
+                  </div>
+
+                  <div className="p-6">
+                    {forecastLoading && (
+                      <div className="flex flex-col items-center py-10">
+                        <div className="w-12 h-12 border-4 border-purple-500/30 rounded-full border-t-purple-500 animate-spin"></div>
+                        <p className="text-gray-300 mt-4">Loading 3-day forecast...</p>
+                      </div>
+                    )}
+                    {forecastError && (
+                      <p className="text-red-300 text-center py-10">{forecastError}</p>
+                    )}
+                    {forecastData && !forecastLoading && (
+                      <>
+                        <div className="bg-white/5 rounded-2xl p-4 mb-4 flex items-center justify-between">
+                          <div>
+                            <p className="text-gray-400 text-xs uppercase tracking-wider mb-1">Now</p>
+                            <p className="text-4xl font-bold text-white">
+                              {forecastData.current.temperature_2m.toFixed(0)}°C
+                            </p>
+                            <p className="text-gray-400 text-sm">{weatherText(forecastData.current.weather_code)}</p>
+                            <p className="text-gray-500 text-xs mt-1">
+                              Feels like {forecastData.current.apparent_temperature.toFixed(0)}°C
+                            </p>
+                          </div>
+                          <div className="text-6xl">{getWeatherIcon(forecastData.current.weather_code)}</div>
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-3 mb-6">
+                          <div className="bg-white/5 rounded-xl p-3 text-center">
+                            <p className="text-gray-500 text-xs mb-1">💧 Humidity</p>
+                            <p className="text-white font-bold">{forecastData.current.relative_humidity_2m}%</p>
+                          </div>
+                          <div className="bg-white/5 rounded-xl p-3 text-center">
+                            <p className="text-gray-500 text-xs mb-1">💨 Wind</p>
+                            <p className="text-white font-bold">{forecastData.current.wind_speed_10m.toFixed(0)} km/h</p>
+                          </div>
+                          <div className="bg-white/5 rounded-xl p-3 text-center">
+                            <p className="text-gray-500 text-xs mb-1">☀️ UV today</p>
+                            <p className="text-white font-bold">{forecastData.daily.uv_index_max[0].toFixed(1)}</p>
+                          </div>
+                        </div>
+
+                        <p className="text-gray-300 font-semibold mb-3">📅 3-Day Forecast</p>
+                        <div className="space-y-2">
+                          {forecastData.daily.time.map((date, i) => (
+                            <div key={date} className="bg-white/5 rounded-2xl p-4 flex items-center justify-between gap-2">
+                              <div className="w-20">
+                                <p className="text-white font-semibold">
+                                  {new Date(date + "T12:00:00").toLocaleDateString(undefined, { weekday: "short" })}
+                                </p>
+                                <p className="text-gray-500 text-xs">
+                                  {new Date(date + "T12:00:00").toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                                </p>
+                              </div>
+                              <div className="text-3xl">{getWeatherIcon(forecastData.daily.weather_code[i])}</div>
+                              <div className="text-right flex-1">
+                                <p className="text-white font-bold text-lg">
+                                  {forecastData.daily.temperature_2m_max[i].toFixed(0)}°C
+                                </p>
+                                <p className="text-gray-400 text-sm">
+                                  {forecastData.daily.temperature_2m_min[i].toFixed(0)}°C
+                                </p>
+                              </div>
+                              <div className="text-right text-xs text-sky-300 w-16">
+                                🌧 {forecastData.daily.precipitation_probability_max[i] ?? 0}%
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
