@@ -319,6 +319,50 @@ const DESTINATIONS = [
   { city: "Zagreb", country: "Croatia", iso2: "HR", lat: 45.8144, lon: 15.978 },
 ];
 
+    // ============ AFFILIATE LINKS ============
+    // Fill these in to earn commission. Links work without them too (no tracking).
+    // Skyscanner: sign up at Skyscanner Partners (skyscannerpartners.com) or
+    //   Travelpayouts (travelpayouts.com) and use your associate ID / partner ID.
+    const SKYSCANNER_ASSOCIATE_ID = ""; // e.g. "1234567890"
+    // Booking.com: sign up at the Booking.com Affiliate Partner Programme
+    //   (partner.booking.com) or via the Awin network and use your label.
+    const BOOKING_LABEL = ""; // e.g. "your-affiliate-label-123"
+
+    // "New York" -> "new-york", strips accents, for Skyscanner city slugs
+    function slugifyCity(name) {
+      return (name || "")
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "") || "city";
+    }
+
+    function localDateStr(d) {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      return `${y}-${m}-${day}`;
+    }
+
+    // Skyscanner deep link: outbound tomorrow, return in 8 days, direct flights preferred
+    function buildSkyScannerUrl(originCity, destCity) {
+      const dep = new Date(); dep.setDate(dep.getDate() + 1);
+      const ret = new Date(); ret.setDate(ret.getDate() + 8);
+      let url = `https://www.skyscanner.net/transport/flights/${slugifyCity(originCity)}/${slugifyCity(destCity)}/${localDateStr(dep)}/${localDateStr(ret)}/?rtn=1&adultsv2=1&cabinclass=economy&preferdirects=true`;
+      if (SKYSCANNER_ASSOCIATE_ID) url += `&associateid=${encodeURIComponent(SKYSCANNER_ASSOCIATE_ID)}`;
+      return url;
+    }
+
+    // Booking.com deep link: check in tomorrow, 2 nights
+    function buildBookingUrl(city, country) {
+      const checkin = new Date(); checkin.setDate(checkin.getDate() + 1);
+      const checkout = new Date(); checkout.setDate(checkout.getDate() + 3);
+      const ss = `${city}${country ? ", " + country : ""}`;
+      let url = `https://www.booking.com/searchresults.html?ss=${encodeURIComponent(ss)}&checkin=${localDateStr(checkin)}&checkout=${localDateStr(checkout)}&group_adults=2&no_rooms=1&lang=en`;
+      if (BOOKING_LABEL) url += `&label=${encodeURIComponent(BOOKING_LABEL)}`;
+      return url;
+    }
+
     // ISO2 -> emoji flag (e.g. "IE" -> 🇮🇪)
     function flagEmoji(iso2) {
       if (!iso2) return "🌍";
@@ -392,6 +436,7 @@ const DESTINATIONS = [
       const [error, setError] = useState(null);
       const [phase, setPhase] = useState("locating");
       const [locationName, setLocationName] = useState("");
+      const [locationCity, setLocationCity] = useState("");
       const [locationSource, setLocationSource] = useState("");
       const [maxDistance, setMaxDistance] = useState(15000);
       const [widened, setWidened] = useState(false);
@@ -507,6 +552,7 @@ const DESTINATIONS = [
         setLocationIso2(city.country_code);
         setLocationSource("picked");
         setLocationName(city.admin1 ? `${city.name}, ${city.admin1}, ${city.country}` : `${city.name}, ${city.country}`);
+        setLocationCity(city.name);
         await fetchWeather(city.lat, city.lon);
       };
 
@@ -571,6 +617,10 @@ const DESTINATIONS = [
         setForecastError(null);
       };
 
+      // City name used as the flight origin in booking links
+      const originForLinks = () =>
+        locationCity || (locationName ? locationName.split(",")[0].trim() : "");
+
       // Reverse geocode auto-detected location
       useEffect(() => {
         if (location && locationSource !== "picked") {
@@ -580,6 +630,7 @@ const DESTINATIONS = [
               const city = data.address.city || data.address.town || data.address.village || data.address.county;
               const country = data.address.country_code?.toUpperCase();
               setLocationName(city ? `${city}, ${country}` : "Your Location");
+              if (city) setLocationCity(city);
               if (data.address.country_code) setLocationIso2(data.address.country_code.toUpperCase());
             })
             .catch(() => setLocationName("Your Location"));
@@ -983,6 +1034,9 @@ const DESTINATIONS = [
                         {selectedDest.distance > 0 && (
                           <p className="text-purple-300 text-sm mt-1">✈️ {formatKm(selectedDest.distance)} away</p>
                         )}
+                        <p className="text-gray-500 text-xs mt-1">
+                          From: {originForLinks() || "your location"}
+                        </p>
                       </div>
                     </div>
                     <button
@@ -1063,6 +1117,31 @@ const DESTINATIONS = [
                         </div>
                       </>
                     )}
+
+                    {/* Booking links */}
+                    <div className="mt-6 grid grid-cols-2 gap-3">
+                      <a
+                        href={buildSkyScannerUrl(originForLinks(), selectedDest.city)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="bg-sky-500/20 hover:bg-sky-500/40 border border-sky-500/40 text-sky-200 rounded-2xl py-3 px-4 text-center font-bold text-sm transition-colors"
+                      >
+                        ✈️ Book this flight
+                      </a>
+                      <a
+                        href={buildBookingUrl(selectedDest.city, selectedDest.country)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="bg-indigo-500/20 hover:bg-indigo-500/40 border border-indigo-500/40 text-indigo-200 rounded-2xl py-3 px-4 text-center font-bold text-sm transition-colors"
+                      >
+                        🏨 Book accommodation
+                      </a>
+                    </div>
+                    <p className="text-gray-600 text-[10px] mt-3 text-center">
+                      {SKYSCANNER_ASSOCIATE_ID || BOOKING_LABEL
+                        ? "Affiliate links — bookings made through them support the app."
+                        : "Affiliate IDs not configured yet — links work but earn no commission."}
+                    </p>
                   </div>
                 </div>
               </div>

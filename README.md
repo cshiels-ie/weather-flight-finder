@@ -26,6 +26,22 @@ A single-file React app that finds the **hottest** and **coldest** destinations 
 4. Filters to destinations within your chosen flight range (with nearest-fallback if too few)
 5. Ranks the survivors by temperature and surfaces the hottest and coldest
 
+## Booking & affiliate links
+
+Tapping any destination opens the forecast panel with two booking buttons:
+
+- ✈️ **Book this flight** — deep link to Skyscanner (outbound tomorrow, return in 8 days, direct flights preferred)
+- 🏨 **Book accommodation** — deep link to Booking.com (2 nights from tomorrow)
+
+Both links accept affiliate parameters. To earn commission, set your IDs at the top of `index.html`:
+
+```js
+const SKYSCANNER_ASSOCIATE_ID = ""; // Skyscanner Partners / Travelpayouts
+const BOOKING_LABEL = "";           // Booking.com Affiliate Partner Programme / Awin
+```
+
+Links work without IDs — they just don't track commission.
+
 ## The capitals dataset
 
 The 252-destination list was built by geocoding the [countriesnow.space](https://countriesnow.space/) capitals dataset through the Open-Meteo geocoding API, with manual QA fixes for ambiguous city names (Bern 🇨🇭 vs Berne Indiana 🇺🇸, Hamilton 🇧🇲 vs Hamilton Ontario 🇨🇦, etc.). Each entry has an ISO2 code so flags render as native emoji — no flag image API needed.
