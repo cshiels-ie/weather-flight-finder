@@ -36,11 +36,16 @@ Tapping any destination opens the forecast panel with two booking buttons:
 Both links accept affiliate parameters. To earn commission, set your IDs at the top of `index.html`:
 
 ```js
-const SKYSCANNER_ASSOCIATE_ID = ""; // Skyscanner Partners / Travelpayouts
-const BOOKING_LABEL = "";           // Booking.com Affiliate Partner Programme / Awin
+const MEDIA_PARTNER_ID = ""; // Skyscanner Partners (partners.skyscanner.net, via impact.com)
+const BOOKING_LABEL = "";    // Booking.com Affiliate Partner Programme / Awin
 ```
 
 Links work without IDs — they just don't track commission.
+
+**Note on Skyscanner links:** they use Skyscanner's official Affiliates Link API
+(`skyscanner.net/g/referrals/v1/flights/day-view/`), which requires IATA airport
+codes. Every destination in the dataset has an IATA code; your origin is resolved
+by city name or by the nearest destination to your location.
 
 ## The capitals dataset
 
