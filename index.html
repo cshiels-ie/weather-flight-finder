@@ -360,6 +360,15 @@ const DESTINATIONS = [
       return "❄️";
     }
 
+    function shuffleArray(array) {
+      const shuffled = [...array];
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+      return shuffled;
+    }
+
     function weatherText(code) {
       if (code === 0) return "Clear sky";
       if (code === 1) return "Mainly clear";
@@ -386,6 +395,7 @@ const DESTINATIONS = [
       const [locationSource, setLocationSource] = useState("");
       const [maxDistance, setMaxDistance] = useState(15000);
       const [widened, setWidened] = useState(false);
+      const [shuffleSeed, setShuffleSeed] = useState(0);
 
       const [selectedDest, setSelectedDest] = useState(null);
       const [forecastData, setForecastData] = useState(null);
@@ -589,7 +599,10 @@ const DESTINATIONS = [
 
       const hottest = filtered.list[0] || null;
       const coldest = filtered.list[filtered.list.length - 1] || null;
-      const displayList = filtered.list.slice(0, 18);
+      const randomGrid = useMemo(() => {
+        if (!filtered.list.length) return [];
+        return shuffleArray(filtered.list).slice(0, 18);
+      }, [filtered.list, shuffleSeed]);
       const hottestList = filtered.list.slice(0, 6);
       const coldestList = [...filtered.list].slice(-6).reverse();
       const sliderFill = ((maxDistance - 500) / (16000 - 500)) * 100;
@@ -621,7 +634,7 @@ const DESTINATIONS = [
                 <span className="gradient-text">Weather Flight Finder</span>
               </h1>
               <p className="text-gray-400 text-lg">
-                Find the hottest and coldest of 250+ world capitals within non-stop flight range
+                Find the hottest and coldest of 250+ world capitals within flight range
               </p>
             </header>
 
@@ -717,7 +730,7 @@ const DESTINATIONS = [
                   <p className="text-gray-500 text-sm mt-3">
                     {filtered.widened
                       ? `⚠️ Fewer than 3 destinations within ${formatKm(maxDistance)} — showing the nearest ${filtered.list.length} instead.`
-                      : `${filtered.list.length} of ${allDestinations.length} destinations within ${formatKm(maxDistance)} non-stop flight range.`}
+                      : `${filtered.list.length} of ${allDestinations.length} destinations within ${formatKm(maxDistance)} flight range.`}
                   </p>
                 </div>
               </div>
@@ -889,12 +902,20 @@ const DESTINATIONS = [
                 </div>
 
                 <div>
-                  <h3 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
-                    <span>🌍</span> Destinations within range
-                    <span className="text-sm font-normal text-gray-400">(sorted by temp, showing {displayList.length} of {filtered.list.length})</span>
-                  </h3>
+                  <div className="flex items-center justify-between mb-6 gap-3 flex-wrap">
+                    <h3 className="text-2xl font-bold text-white flex items-center gap-3">
+                      <span>🌍</span> Random destinations
+                      <span className="text-sm font-normal text-gray-400">({randomGrid.length} of {filtered.list.length} in range)</span>
+                    </h3>
+                    <button
+                      onClick={() => setShuffleSeed(s => s + 1)}
+                      className="text-xs bg-purple-500/30 hover:bg-purple-500/50 text-purple-200 px-4 py-2 rounded-full font-semibold transition-colors"
+                    >
+                      🎲 Shuffle
+                    </button>
+                  </div>
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                    {displayList.map((dest) => (
+                    {randomGrid.map((dest) => (
                       <div
                         key={dest.id}
                         onClick={() => openForecast(dest)}

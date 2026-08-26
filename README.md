@@ -1,6 +1,6 @@
 # Weather Flight Finder ✈️🌡️
 
-A single-file React app that finds the **hottest** and **coldest** destinations within **non-stop flight range** of any city in the world.
+A single-file React app that finds the **hottest** and **coldest** destinations within **flight range** of any city in the world.
 
 ## Features
 
@@ -8,7 +8,7 @@ A single-file React app that finds the **hottest** and **coldest** destinations 
 - 🔍 **City picker** with search (Open-Meteo geocoding API)
 - 🌍 **252 world capitals + major cities** — every country capital, all with coordinates, embedded in the app (no data fetch needed)
 - 🇮🇪 **Emoji country flags** everywhere — derived from ISO2 codes, zero dependencies
-- ✈️ **Flight distance filter** — slider to set max non-stop range (500 – 16,000 km)
+- ✈️ **Flight distance filter** — slider to set max flight range (500 – 16,000 km)
 - 📏 **Haversine distances** shown on every destination card
 - 🌡️ **Real-time weather** for your location and all 252 destinations in **one batched API call**
 - 🔥 **Hottest destination** card
